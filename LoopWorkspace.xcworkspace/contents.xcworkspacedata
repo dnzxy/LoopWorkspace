@@ -48,9 +48,6 @@
       location = "group:TidepoolService/TidepoolService.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:NightscoutRemoteCGM/NightscoutRemoteCGM.xcodeproj">
-   </FileRef>
-   <FileRef
       location = "group:NightscoutService/NightscoutService.xcodeproj">
    </FileRef>
    <FileRef
@@ -64,9 +61,6 @@
    </FileRef>
    <FileRef
       location = "group:OmniKit/OmniKit.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:RileyLinkKit/RileyLinkKit.xcodeproj">
    </FileRef>
    <FileRef
       location = "group:MinimedKit/MinimedKit.xcodeproj">
