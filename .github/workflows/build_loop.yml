@@ -67,7 +67,8 @@ jobs:
     name: Build
     needs: check_latest_from_upstream
     runs-on: macos-13
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 04 1 * *' || needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' }} # runs if started manually, or if scheduled on the first each month, or if new commits were found
+    if: ${{ always() && !cancelled() && ( github.event_name == 'workflow_dispatch' || github.event.schedule == '0 04 1 * *' || needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ) }}
+    #if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 04 1 * *' || needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' }} # runs if started manually, or if scheduled on the first each month, or if new commits were found
     steps:
       - name: Select Xcode version
         run: "sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer"
