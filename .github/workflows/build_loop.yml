@@ -19,7 +19,7 @@ env:
 
 jobs:
   check_latest_from_upstream:
-    if: ${{ env.RUN_KEEPALIVE != 'false'}}
+    if: ${{ env.SYNC_UPSTREAM != 'false'}}
     runs-on: ubuntu-latest
     name: Check upstream and keep alive
     outputs: 
