@@ -7,8 +7,8 @@ on:
   #push:
 
   schedule:
-    - cron: '30 18 * * *' # Checks for updates at 04:00 UTC every day
-    - cron: '30 18 * * *' # Builds the app on the 1th every month
+    - cron: '45 18 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '45 18 * * *' # Builds the app on the 1th every month
 
 env:
   UPSTREAM_REPO: LoopKit/LoopWorkspace
@@ -26,14 +26,14 @@ jobs:
 
     steps:
     - name: Checkout target repo
-      if: ${{ vars.SYNC_UPSTREAM != 'false' }}
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GH_PAT }}
         ref: alive
 
     - name: Sync upstream changes
-      if: ${{ env.SYNC_UPSTREAM != 'false' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
       with:
@@ -45,28 +45,28 @@ jobs:
       
     # Display a sample message based on the sync output var 'has_new_commits'
     - name: New commits found
-      if: ${{ vars.SYNC_UPSTREAM != 'false' && steps.sync.outputs.has_new_commits == 'true' }}
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && steps.sync.outputs.has_new_commits == 'true' }}
       run: echo "New commits were found to sync."
     
     - name: No new commits
-      if: ${{ vars.SYNC_UPSTREAM != 'false' && steps.sync.outputs.has_new_commits == 'false' }}
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && steps.sync.outputs.has_new_commits == 'false' }}
       run: echo "There were no new commits."
       
     - name: Show value of 'has_new_commits'
-      if: ${{ vars.SYNC_UPSTREAM != 'false' }}
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
         
     # Keep repository "alive": add empty commits to ALIVE_BRANCH after "time_elapsed" days of inactivity to avoid inactivation of scheduled workflows
     - name: Keep alive
-      if: ${{ vars.SYNC_UPSTREAM != 'false' }}
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
       uses: gautamkrishnar/keepalive-workflow@v1 # using the workflow with default settings
       with:
         time_elapsed: 20 # Time elapsed from the previous commit to trigger a new automated commit (in days)
         
     - name: Show scheduled build configuration message
-      if: ${{ vars.SYNC_UPSTREAM == 'false'}}
+      if: ${{ !vars.SYNC_UPSTREAM }}
       run: |
         echo "Some test log for now..." 
   
@@ -74,23 +74,23 @@ jobs:
     name: Build
     needs: check_latest_from_upstream
     runs-on: macos-13
-    if: | # runs if started manually, or if sync schedule is enabled and scheduled on the first each month, or if sync schedule is enabled and new commits were found
+    if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
       ${{ github.event_name == 'workflow_dispatch' ||
-      (vars.SYNC_UPSTREAM != 'false' && github.event.schedule == '30 18 * * *') ||
-      (vars.SYNC_UPSTREAM != 'false' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ) }} 
+      (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.event.schedule == '45 18 * * *') ||
+      (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ) }} 
     steps:
       - name: Select Xcode version
         run: "sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer"
 
       - name: Checkout Repo for syncing
-        if: ${{ env.SYNC_UPSTREAM != 'false' }}
+        if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_PAT }}
           ref: ${{ env.TARGET_BRANCH }} 
 
       - name: Sync upstream changes
-        if: ${{ env.SYNC_UPSTREAM != 'false' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
+        if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
@@ -102,15 +102,15 @@ jobs:
       
       # Display a sample message based on the sync output var 'has_new_commits'
       - name: New commits found
-        if: ${{ env.SYNC_UPSTREAM != 'false' && steps.sync.outputs.has_new_commits == 'true' }}
+        if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && steps.sync.outputs.has_new_commits == 'true' }}
         run: echo "New commits were found to sync."
     
       - name: No new commits
-        if: ${{ env.SYNC_UPSTREAM != 'false' && steps.sync.outputs.has_new_commits == 'false' }}
+        if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && steps.sync.outputs.has_new_commits == 'false' }}
         run: echo "There were no new commits."
       
       - name: Show value of 'has_new_commits'
-        if: ${{ env.SYNC_UPSTREAM != 'false' }}
+        if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
