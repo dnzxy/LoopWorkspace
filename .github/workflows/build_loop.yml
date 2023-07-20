@@ -7,7 +7,7 @@ on:
   #push:
 
   schedule:
-    - cron: '0 18 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '0 4 * * *' # Checks for updates at 04:00 UTC every day
     - cron: '0 18 * * *' # Builds the app on the 1th every month
 
 env:
@@ -19,7 +19,6 @@ env:
 
 jobs:
   check_latest_from_upstream:
-    if: ${{ vars.SYNC_UPSTREAM != 'false'}} # only run keepalive if syncing is wanted!
     runs-on: ubuntu-latest
     name: Check upstream and keep alive
     outputs: 
@@ -27,6 +26,7 @@ jobs:
 
     steps:
     - name: Checkout target repo
+      if: ${{ vars.SYNC_UPSTREAM != 'false' }}
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GH_PAT }}
@@ -45,30 +45,36 @@ jobs:
       
     # Display a sample message based on the sync output var 'has_new_commits'
     - name: New commits found
-      if: steps.sync.outputs.has_new_commits == 'true'
+      if: ${{ vars.SYNC_UPSTREAM != 'false' && steps.sync.outputs.has_new_commits == 'true' }}
       run: echo "New commits were found to sync."
     
     - name: No new commits
-      if: steps.sync.outputs.has_new_commits == 'false'
+      if: ${{ vars.SYNC_UPSTREAM != 'false' && steps.sync.outputs.has_new_commits == 'false' }}
       run: echo "There were no new commits."
       
     - name: Show value of 'has_new_commits'
+      if: ${{ vars.SYNC_UPSTREAM != 'false' }}
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
         
     # Keep repository "alive": add empty commits to ALIVE_BRANCH after "time_elapsed" days of inactivity to avoid inactivation of scheduled workflows
     - name: Keep alive
+      if: ${{ vars.SYNC_UPSTREAM != 'false' }}
       uses: gautamkrishnar/keepalive-workflow@v1 # using the workflow with default settings
       with:
         time_elapsed: 20 # Time elapsed from the previous commit to trigger a new automated commit (in days)
+        
+    - name: Show scheduled build configuration message
+      if: ${{ vars.SYNC_UPSTREAM == 'false'}}
+      run: |
+        echo "Some test log for now..." 
   
   build:
     name: Build
     needs: check_latest_from_upstream
     runs-on: macos-13
-    if: ${{ always() && !cancelled() && ( github.event_name == 'workflow_dispatch' || github.event.schedule == '0 18 * * *' || needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ) }}
-    #if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 04 1 * *' || needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' }} # runs if started manually, or if scheduled on the first each month, or if new commits were found
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 18 * * *' || needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' }} # runs if started manually, or if scheduled on the first each month, or if new commits were found
     steps:
       - name: Select Xcode version
         run: "sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer"
