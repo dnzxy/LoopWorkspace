@@ -70,9 +70,10 @@ jobs:
     - name: Show scheduled build configuration message
       if: ${{ !vars.SYNC_UPSTREAM || (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM != 'true') }}
       run: |
-        echo "::notice::Scheduled Sync and Build for Loop is not configured.\n \
-              If you want to enable automatic builds and updates for your Loop, please see the instructions \
-              under the following path: LoopWorkspace > fastlane > testflight.md" 
+        echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
+        echo "You have not yet configured the scheduled sync and build for Loop's browser build." >> $GITHUB_STEP_SUMMARY
+        echo "If you want to enable automatic builds and updates for your Loop, please follow the instructions \
+              under the following path `LoopWorkspace/fastlane/testflight.md`." >> $GITHUB_STEP_SUMMARY
   
   build:
     name: Build
