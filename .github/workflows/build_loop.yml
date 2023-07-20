@@ -7,12 +7,12 @@ on:
   #push:
 
   schedule:
-    - cron: '30 19 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '0 04 * * *' # Checks for updates at 04:00 UTC every day
     - cron: '0 04 01 * *' # Builds the app on the 1th every month
 
 env:
-  UPSTREAM_REPO: MikePlante1/LoopWorkspace
-  UPSTREAM_BRANCH: deniz # branch on upstream repository to sync from (replace with specific branch name if needed)
+  UPSTREAM_REPO: LoopKit/LoopWorkspace
+  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
   TARGET_BRANCH: ${{ github.ref_name }} # target branch on fork to be kept in sync, and target branch on upstream to be kept alive (replace with specific branch name if needed)
   ALIVE_BRANCH: alive
   SYNC_UPSTREAM: ${{ vars.SYNC_UPSTREAM }} # set an optional "SYNC_UPSTREAM" repository variable to 'false' to disable syncing of fork with the upstream repository
@@ -21,6 +21,8 @@ jobs:
   check_latest_from_upstream:
     runs-on: ubuntu-latest
     name: Check upstream and keep alive
+    permissions:
+      contents: write
     outputs: 
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
 
@@ -29,17 +31,17 @@ jobs:
       if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
       uses: actions/checkout@v3
       with:
-        token: ${{ secrets.GH_PAT }}
+        token: ${{ secrets.GITHUB_TOKEN }}
         ref: alive
 
     - name: Sync upstream changes
-      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.repository_owner != 'MikePlante1' }} # do not run the upstream sync action on the upstream repository
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
       with:
         target_sync_branch: ${{ env.ALIVE_BRANCH }}
         shallow_since: 6 months ago
-        target_repo_token: ${{ secrets.GH_PAT }}
+        target_repo_token: ${{ secrets.GITHUB_TOKEN }}
         upstream_sync_branch: ${{ env.UPSTREAM_BRANCH }}
         upstream_sync_repo: ${{ env.UPSTREAM_REPO }}
       
@@ -66,14 +68,16 @@ jobs:
         time_elapsed: 20 # Time elapsed from the previous commit to trigger a new automated commit (in days)
         
     - name: Show scheduled build configuration message
-      if: ${{ !vars.SYNC_UPSTREAM }}
+      if: ${{ !vars.SYNC_UPSTREAM || (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM != 'true') }}
       run: |
-        echo "Some test log for now..." 
+        echo "::info::Scheduled Sync and Build for Loop is not configured. If you want to enable automatic builds and updates for your Loop, please see the instructions under LoopWorkspace > fastlane > testflight.md" 
   
   build:
     name: Build
     needs: check_latest_from_upstream
     runs-on: macos-13
+    permissions:
+      contents: write
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
       ${{ github.event_name == 'workflow_dispatch' ||
       (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.event.schedule == '0 04 01 * *') ||
@@ -86,7 +90,7 @@ jobs:
         if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' }}
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ env.TARGET_BRANCH }} 
 
       - name: Sync upstream changes
@@ -96,7 +100,7 @@ jobs:
         with:
           target_sync_branch: ${{ env.TARGET_BRANCH }}
           shallow_since: 6 months ago
-          target_repo_token: ${{ secrets.GH_PAT }}
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
           upstream_sync_branch: ${{ env.UPSTREAM_BRANCH }}
           upstream_sync_repo: ${{ env.UPSTREAM_REPO }}
       
@@ -118,7 +122,7 @@ jobs:
       - name: Checkout Repo for building
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           submodules: recursive
           ref: ${{ env.TARGET_BRANCH }}
           
@@ -159,7 +163,7 @@ jobs:
         run: fastlane build_loop
         env:
           TEAMID: ${{ secrets.TEAMID }}
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }} # GH_PAT required here with access role "repo" to read from Match-Secrets repository
           FASTLANE_KEY_ID: ${{ secrets.FASTLANE_KEY_ID }}
           FASTLANE_ISSUER_ID: ${{ secrets.FASTLANE_ISSUER_ID }}
           FASTLANE_KEY: ${{ secrets.FASTLANE_KEY }}
