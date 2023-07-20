@@ -70,7 +70,9 @@ jobs:
     - name: Show scheduled build configuration message
       if: ${{ !vars.SYNC_UPSTREAM || (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM != 'true') }}
       run: |
-        echo "::info::Scheduled Sync and Build for Loop is not configured. If you want to enable automatic builds and updates for your Loop, please see the instructions under LoopWorkspace > fastlane > testflight.md" 
+        echo "::notice::Scheduled Sync and Build for Loop is not configured.\n \
+              If you want to enable automatic builds and updates for your Loop, please see the instructions \
+              under the following path: LoopWorkspace > fastlane > testflight.md" 
   
   build:
     name: Build
