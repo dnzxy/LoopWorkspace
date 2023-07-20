@@ -72,8 +72,9 @@ jobs:
       run: |
         echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
         echo "You have not yet configured the scheduled sync and build for Loop's browser build." >> $GITHUB_STEP_SUMMARY
+        echo "Synchronizing your fork of <code>LoopWorkspace</code> with the upstream repository <code>LoopKit/LoopWorkspace</code> will be skipped." >> $GITHUB_STEP_SUMMARY
         echo "If you want to enable automatic builds and updates for your Loop, please follow the instructions \
-              under the following path `LoopWorkspace/fastlane/testflight.md`." >> $GITHUB_STEP_SUMMARY
+              under the following path <code>LoopWorkspace/fastlane/testflight.md</code>." >> $GITHUB_STEP_SUMMARY
   
   build:
     name: Build
