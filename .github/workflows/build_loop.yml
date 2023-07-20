@@ -7,12 +7,12 @@ on:
   #push:
 
   schedule:
-    - cron: '45 18 * * *' # Checks for updates at 04:00 UTC every day
-    - cron: '45 18 * * *' # Builds the app on the 1th every month
+    - cron: '20 19 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '0 20 * * *' # Builds the app on the 1th every month
 
 env:
-  UPSTREAM_REPO: LoopKit/LoopWorkspace
-  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
+  UPSTREAM_REPO: MikePlante1/LoopWorkspace
+  UPSTREAM_BRANCH: deniz # branch on upstream repository to sync from (replace with specific branch name if needed)
   TARGET_BRANCH: ${{ github.ref_name }} # target branch on fork to be kept in sync, and target branch on upstream to be kept alive (replace with specific branch name if needed)
   ALIVE_BRANCH: alive
   SYNC_UPSTREAM: ${{ vars.SYNC_UPSTREAM }} # set an optional "SYNC_UPSTREAM" repository variable to 'false' to disable syncing of fork with the upstream repository
@@ -33,7 +33,7 @@ jobs:
         ref: alive
 
     - name: Sync upstream changes
-      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
+      if: ${{ vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.repository_owner != 'MikePlante1' }} # do not run the upstream sync action on the upstream repository
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
       with:
@@ -76,7 +76,7 @@ jobs:
     runs-on: macos-13
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
       ${{ github.event_name == 'workflow_dispatch' ||
-      (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.event.schedule == '45 18 * * *') ||
+      (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.event.schedule == '0 20 * * *') ||
       (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ) }} 
     steps:
       - name: Select Xcode version
