@@ -62,17 +62,13 @@ jobs:
     
     # Keep repository "alive": add empty commits to ALIVE_BRANCH after "time_elapsed" days of inactivity to avoid inactivation of scheduled workflows
     - name: Keep alive
-      if: |
-        ${{
-          ( vars.SCHEDULED_BUILD && vars.SCHEDULED_BUILD == 'true' ) ||
-          ( vars.SCHEDULED_SYNC == 'true' )
-        }}
+      if: ${{ vars.SCHEDULED_BUILD == 'true' || vars.SCHEDULED_SYNC == 'true' }}
       uses: gautamkrishnar/keepalive-workflow@v1 # using the workflow with default settings
       with:
         time_elapsed: 20 # Time elapsed from the previous commit to trigger a new automated commit (in days)
         
     - name: Show scheduled build configuration message
-      if: ${{ env.SCHEDULE_BUILD != 'true' || env.SCHEDULE_SYNC != 'true' }}
+      if: ${{ vars.SCHEDULED_BUILD != 'true' || vars.SCHEDULED_SYNC != 'true' }}
       run: |
         echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
         echo "You have not yet configured the scheduled sync and build for Loop's browser build." >> $GITHUB_STEP_SUMMARY
