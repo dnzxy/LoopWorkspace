@@ -7,8 +7,8 @@ on:
   #push:
 
   schedule:
-    - cron: '0 04 * * *' # Checks for updates at 04:00 UTC every day
-    - cron: '0 04 01 * *' # Builds the app on the 1th every month
+    - cron: '0 4 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '0 4 1 * *' # Builds the app on the 1th every month
 
 env:
   UPSTREAM_REPO: LoopKit/LoopWorkspace
@@ -84,7 +84,7 @@ jobs:
       contents: write
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
       ${{ github.event_name == 'workflow_dispatch' ||
-      (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.event.schedule == '0 04 01 * *') ||
+      (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && github.event.schedule == '0 4 1 * *') ||
       (vars.SYNC_UPSTREAM && vars.SYNC_UPSTREAM == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ) }} 
     steps:
       - name: Select Xcode version
