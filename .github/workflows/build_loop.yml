@@ -32,17 +32,12 @@ jobs:
     - name: So condition checks
       run: |
         echo $SCHEDULED_BUILD
-        echo $($SCHEDULED_BUILD == 'true')
-        echo $( $SCHEDULED_BUILD && $SCHEDULED_BUILD == 'true' )
+        
+        [[ $SCHEDULED_BUILD -eq "true" ]] && echo false || echo true
         
         echo $SCHEDULED_SYNC
-        echo $($SCHEDULED_SYNC == 'true')
-        echo $( $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' )
         
-        echo $( $SCHEDULED_BUILD && $SCHEDULED_BUILD == 'true' ) || ( $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' ) )
-        
-        
-        
+        [[ $SCHEDULED_SYNC -eq "true" ]] && echo false || echo true
         
     - name: Checkout target repo
       if: |
