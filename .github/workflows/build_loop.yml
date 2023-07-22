@@ -47,8 +47,8 @@ jobs:
     - name: Checkout target repo
       if: |
         ${{
-          ( $SCHEDULED_BUILD && $SCHEDULED_BUILD == 'true' ) ||
-          ( $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' )
+          ( env.SCHEDULED_BUILD && env.SCHEDULED_BUILD == 'true' ) ||
+          ( env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' )
         }}
       uses: actions/checkout@v3
       with:
@@ -56,7 +56,7 @@ jobs:
         ref: alive
 
     - name: Sync upstream changes
-      if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
+      if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
       with:
@@ -68,15 +68,15 @@ jobs:
       
     # Display a sample message based on the sync output var 'has_new_commits'
     - name: New commits found
-      if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true' }}
+      if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true' }}
       run: echo "New commits were found to sync."
     
     - name: No new commits
-      if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false' }}
+      if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false' }}
       run: echo "There were no new commits."
       
     - name: Show value of 'has_new_commits'
-      if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' }}
+      if: ${{ env.SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' }}
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
@@ -85,8 +85,8 @@ jobs:
     - name: Keep alive
       if: |
         ${{
-          ( $SCHEDULED_BUILD && $SCHEDULED_BUILD == 'true' ) ||
-          ( $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' )
+          ( env.SCHEDULED_BUILD && env.SCHEDULED_BUILD == 'true' ) ||
+          ( env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' )
         }}
       uses: gautamkrishnar/keepalive-workflow@v1 # using the workflow with default settings
       with:
@@ -95,8 +95,8 @@ jobs:
     - name: Show scheduled build configuration message
       if: |
         ${{
-          ( !$SCHEDULE_BUILD && $SCHEDULE_BUILD != 'true' ) ||
-          ( !$SCHEDULE_SYNC && $SCHEDULE_SYNC != 'true' )
+          ( !env.SCHEDULE_BUILD && env.SCHEDULE_BUILD != 'true' ) ||
+          ( !env.SCHEDULE_SYNC && env.SCHEDULE_SYNC != 'true' )
         }}
       run: |
         echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
@@ -122,14 +122,14 @@ jobs:
         run: "sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer"
 
       - name: Checkout Repo for syncing
-        if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' }}
+        if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' }}
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ env.TARGET_BRANCH }} 
 
       - name: Sync upstream changes
-        if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
+        if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' }} # do not run the upstream sync action on the upstream repository
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
@@ -141,15 +141,15 @@ jobs:
       
       # Display a sample message based on the sync output var 'has_new_commits'
       - name: New commits found
-        if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true' }}
+        if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true' }}
         run: echo "New commits were found to sync."
     
       - name: No new commits
-        if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false' }}
+        if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false' }}
         run: echo "There were no new commits."
       
       - name: Show value of 'has_new_commits'
-        if: ${{ $SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' }}
+        if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' }}
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
