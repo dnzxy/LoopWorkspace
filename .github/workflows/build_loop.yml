@@ -76,7 +76,7 @@ jobs:
       run: echo "There were no new commits."
       
     - name: Show value of 'has_new_commits'
-      if: ${{ env.SCHEDULED_SYNC && $SCHEDULED_SYNC == 'true' }}
+      if: ${{ env.SCHEDULED_SYNC && env.SCHEDULED_SYNC == 'true' }}
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
