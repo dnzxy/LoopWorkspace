@@ -7,8 +7,8 @@ on:
   #push:
 
   schedule:
-    - cron: '35 19 * * *' # Checks for updates at 04:00 UTC every day
-    - cron: '0 4 1 * *' # Builds the app on the 1st every month
+    - cron: '50 19 * * *' # Checks for updates at 04:00 UTC every day
+#    - cron: '0 4 1 * *' # Builds the app on the 1st every month
 
 env:
   UPSTREAM_REPO: loopdocs-tester/LoopWorkspace
@@ -76,6 +76,16 @@ jobs:
         echo "Synchronizing your fork of <code>LoopWorkspace</code> with the upstream repository <code>LoopKit/LoopWorkspace</code> will be skipped." >> $GITHUB_STEP_SUMMARY
         echo "If you want to enable automatic builds and updates for your Loop, please follow the instructions \
               under the following path <code>LoopWorkspace/fastlane/testflight.md</code>." >> $GITHUB_STEP_SUMMARY
+
+    - name: Log conditional vars  
+      run: |
+        echo "event name ${{ github.event_name == 'workflow_dispatch' }}"
+        echo "event schedule ${{ github.event.schedule == '45 19 * *' }}"
+        echo "new commits: ${{ needs.check_latest_from_upstream.outputs.NEW_COMMITS }}"
+        
+        if [[ github.event_name == 'workflow_dispatch' ]]; then echo true; else echo false; fi
+        if [[ vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '45 19 * *' ]]; then echo true; else echo false; fi
+        if [[ vars.SCHEDULED_SYNC == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ]]; then echo true; else echo false; fi
   
   build:
     name: Build
@@ -85,7 +95,7 @@ jobs:
       contents: write
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
         github.event_name == 'workflow_dispatch' ||
-        (vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '35 19 * *') ||
+        (vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '45 19 * *') ||
         (vars.SCHEDULED_SYNC == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' )
     steps:
       - name: Select Xcode version
