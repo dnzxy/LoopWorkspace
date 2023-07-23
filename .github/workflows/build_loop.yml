@@ -30,6 +30,7 @@ jobs:
         detached: true
 
   check_latest_from_upstream:
+    needs: setup_tmate
     runs-on: ubuntu-latest
     name: Check upstream and keep alive
     permissions:
