@@ -17,10 +17,6 @@ env:
 #  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
   TARGET_BRANCH: ${{ github.ref_name }} # target branch on fork to be kept in sync, and target branch on upstream to be kept alive (replace with specific branch name if needed)
   ALIVE_BRANCH: alive
-  SCHEDULED_BUILD: ${{ vars.SCHEDULED_BUILD }}
-  SCHEDULED_SYNC: ${{ vars.SCHEDULED_SYNC }}
-  EVENT_NAME: ${{ github.event_name }}
-  EVENT_SCHEDULE: ${{ github.event.schedule }}
 
 jobs:
   check_latest_from_upstream:
