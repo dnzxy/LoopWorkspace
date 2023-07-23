@@ -77,13 +77,6 @@ jobs:
         echo "If you want to enable automatic builds and updates for your Loop, please follow the instructions \
               under the following path <code>LoopWorkspace/fastlane/testflight.md</code>." >> $GITHUB_STEP_SUMMARY
   
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-      env:
-        COMMITS: ${{ steps.sync.outputs.has_new_commits }}
-      with:
-        detached: true
-  
   build:
     name: Build
     needs: check_latest_from_upstream
