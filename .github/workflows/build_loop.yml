@@ -7,7 +7,7 @@ on:
   #push:
 
   schedule:
-    - cron: '18 20 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '33 20 * * *' # Checks for updates at 04:00 UTC every day
 #    - cron: '0 4 1 * *' # Builds the app on the 1st every month
 
 env:
@@ -86,7 +86,7 @@ jobs:
         echo "new commits: ${{ steps.sync.outputs.has_new_commits }}"
         
         if [[ github.event_name == 'workflow_dispatch' ]]; then echo true; else echo false; fi
-        if [[ vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '45 19 * *' ]]; then echo true; else echo false; fi
+        if [[ vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '33 20 * *' ]]; then echo true; else echo false; fi
         if [[ vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true' ]]; then echo true; else echo false; fi
   
   build:
@@ -97,7 +97,7 @@ jobs:
       contents: write
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
         github.event_name == 'workflow_dispatch' ||
-        (vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '45 19 * *') ||
+        (vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '33 20 * *') ||
         (vars.SCHEDULED_SYNC == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' )
     steps:
       - name: Select Xcode version
