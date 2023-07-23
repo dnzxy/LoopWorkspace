@@ -21,7 +21,6 @@ env:
   SCHEDULED_SYNC: ${{ vars.SCHEDULED_SYNC }}
   EVENT_NAME: ${{ github.event_name }}
   EVENT_SCHEDULE: ${{ github.event.schedule }}
-  COMMITS: ${{ steps.sync.outputs.has_new_commits }}
 
 jobs:
   check_latest_from_upstream:
@@ -84,6 +83,8 @@ jobs:
   
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v3
+      env:
+        COMMITS: ${{ steps.sync.outputs.has_new_commits }}
       with:
         detached: true
   
