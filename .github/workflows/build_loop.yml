@@ -7,7 +7,7 @@ on:
   #push:
 
   schedule:
-    - cron: '50 19 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '18 20 * * *' # Checks for updates at 04:00 UTC every day
 #    - cron: '0 4 1 * *' # Builds the app on the 1st every month
 
 env:
@@ -79,13 +79,15 @@ jobs:
 
     - name: Log conditional vars  
       run: |
-        echo "event name ${{ github.event_name == 'workflow_dispatch' }}"
-        echo "event schedule ${{ github.event.schedule == '45 19 * *' }}"
-        echo "new commits: ${{ needs.check_latest_from_upstream.outputs.NEW_COMMITS }}"
+        echo "SCHEDULED_BUILD: ${{ vars.SCHEDULED_BUILD }}"
+        echo "SCHEDULED_SYNC: ${{ vars.SCHEDULED_SYNC }}"
+        echo "event name ${{ github.event_name }}"
+        echo "event schedule ${{ github.event.schedule }}"
+        echo "new commits: ${{ steps.sync.outputs.has_new_commits }}"
         
         if [[ github.event_name == 'workflow_dispatch' ]]; then echo true; else echo false; fi
         if [[ vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '45 19 * *' ]]; then echo true; else echo false; fi
-        if [[ vars.SCHEDULED_SYNC == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ]]; then echo true; else echo false; fi
+        if [[ vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true' ]]; then echo true; else echo false; fi
   
   build:
     name: Build
