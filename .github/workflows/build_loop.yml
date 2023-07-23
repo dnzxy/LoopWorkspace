@@ -7,7 +7,7 @@ on:
   #push:
 
   schedule:
-    - cron: '05 18 * * *' # Checks for updates at 04:00 UTC every day
+    - cron: '20 18 * * *' # Checks for updates at 04:00 UTC every day
     - cron: '0 4 1 * *' # Builds the app on the 1st every month
 
 env:
