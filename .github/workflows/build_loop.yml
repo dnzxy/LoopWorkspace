@@ -11,7 +11,7 @@ on:
     - cron: '0 4 1 * *' # Builds the app on the 1st every month
 
 env:
-  UPSTREAM_REPO: loopdocs-tester/LoopWorkspace
+  UPSTREAM_REPO: LoopKit/LoopWorkspace
   UPSTREAM_BRANCH: sync-build
 #  UPSTREAM_REPO: LoopKit/LoopWorkspace
 #  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
@@ -36,7 +36,7 @@ jobs:
         ref: alive
 
     - name: Sync upstream changes
-      if: vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'loopdocs-tester' # do not run the upstream sync action on the upstream repository
+      if: vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' # do not run the upstream sync action on the upstream repository
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
       with:
