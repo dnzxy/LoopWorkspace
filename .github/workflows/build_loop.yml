@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check alive branch and permissions
     outputs:
-      WORKFLOW_PERMISSION: ${{ steps.workflow-permissions.has_permission }}
+      WORKFLOW_PERMISSION: ${{ steps.workflow-permission.outputs.has_permission }}
       
     steps:
     - name: Check for workflow permissions
@@ -44,9 +44,6 @@ jobs:
           echo "has_permission=false" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
         fi
         
-    - name: Check output
-      run: echo "${{ steps.workflow-permission.outputs.has_permission }}"
-    
     - name: Check for alive branch
       if: steps.workflow-permission.outputs.has_permission == 'true'
       run: |
@@ -74,6 +71,9 @@ jobs:
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
       
     steps:
+    - name: Check output
+      run: echo "${{ needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION }}"
+    
     - name: Checkout target repo
       if: |
         needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
