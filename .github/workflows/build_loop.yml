@@ -25,9 +25,9 @@ jobs:
   check_alive_and_permissions:
     needs: secrets
     runs-on: ubuntu-latest
-    name: Check for alive branch; create if necessary
+    name: Check alive branch and permissions
     outputs:
-      WORKFLOW_PERMISSION: ${{ steps.workflow-permissions.WORKFLOW_PERMISSIONS }}
+      WORKFLOW_PERMISSION: ${{ steps.workflow-permissions.has_permission }}
       
     steps:
     - name: Check for workflow permissions
@@ -37,15 +37,18 @@ jobs:
         
         if [[ $PERMISSIONS =~ "workflow" || $PERMISSIONS == "" ]]; then
           echo "GH_PAT holds workflow permissions or is fine-grained PAT."
-          echo "WORKFLOW_PERMISSION=true" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
+          echo "has_permission=true" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
         else 
           echo "GH_PAT lacks workflow permissions."
           echo "Automated build features will be skipped!"
-          echo "WORKFLOW_PERMISSION=false" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
+          echo "has_permission=false" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
         fi
+        
+    - name: Check output
+      run: echo "${{ steps.workflow-permission.outputs.has_permission }}"
     
     - name: Check for alive branch
-      if: steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true'
+      if: steps.workflow-permission.outputs.has_permission == 'true'
       run: |
         if git show-ref --quiet refs/heads/alive; then
           echo "Branch 'alive' exists."
