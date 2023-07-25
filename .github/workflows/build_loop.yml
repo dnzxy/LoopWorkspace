@@ -22,6 +22,8 @@ jobs:
     uses: ./.github/workflows/validate_secrets.yml
     secrets: inherit
     
+  # Checks if GH_PAT holds workflow permissions
+  # Checks for existence of alive branch; if non-existent creates it
   check_alive_and_permissions:
     needs: secrets
     runs-on: ubuntu-latest
@@ -47,7 +49,7 @@ jobs:
     - name: Check for alive branch
       if: steps.workflow-permission.outputs.has_permission == 'true'
       run: |
-        if git show-ref --quiet refs/heads/alive; then
+        if [[ "$(gh api -H "Accept: application/vnd.github+json" /repos/dnzxy/LoopWorkspace/branches | jq --raw-output 'any(.name=="alive")')" == "true" ]] then
           echo "Branch 'alive' exists."
           echo "ALIVE_BRANCH_EXISTS=true" >> $GITHUB_ENV # Set ALIVE_BRANCH_EXISTS to true
         else
@@ -57,12 +59,26 @@ jobs:
         
     - name: Create alive branch
       if: env.ALIVE_BRANCH_EXISTS != 'true'
-      uses: peterjgrainger/action-create-branch@v2.2.0
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
-      with:
-        branch: alive
+      run: |
+        # Get ref for LoopKit/LoopWorkspace:dev
+        SHA=$(curl -sS https://api.github.com/repos/LoopKit/LoopWorkspace/git/refs \
+          | jq '.[] | select(.ref == "refs/heads/dev" ) | .object.sha' \
+          | tr -d '"'
+        );
         
+        # Create alive branch based on LoopKit/LoopWorkspace:dev
+        gh api \
+          --method POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          /repos/${{ github.repository_owner }}/LoopWorkspace/git/refs \
+          -f ref='refs/heads/alive' \
+          -f sha=$SHA
+          
+  # Checks for changes in upstream repository; if changes exist prompts sync for build
+  # Performs keepalive to avoid stale fork
   check_latest_from_upstream:
     needs: check_alive_and_permissions
     runs-on: ubuntu-latest
@@ -71,9 +87,6 @@ jobs:
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
       
     steps:
-    - name: Check output
-      run: echo "${{ needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION }}"
-    
     - name: Checkout target repo
       if: |
         needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
@@ -133,6 +146,8 @@ jobs:
         echo "If you want to enable automatic builds and updates for your Loop, please follow the instructions \
               under the following path <code>LoopWorkspace/fastlane/testflight.md</code>." >> $GITHUB_STEP_SUMMARY
   
+  
+  # Builds Loop
   build:
     name: Build
     needs: check_latest_from_upstream
