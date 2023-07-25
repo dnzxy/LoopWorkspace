@@ -12,29 +12,78 @@ on:
 
 env:
   UPSTREAM_REPO: LoopKit/LoopWorkspace
-  UPSTREAM_BRANCH: sync-build
+  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
   TARGET_BRANCH: ${{ github.ref_name }} # target branch on fork to be kept in sync, and target branch on upstream to be kept alive (replace with specific branch name if needed)
   ALIVE_BRANCH: alive
+  WORKFLOW_PERMISSIONS: false
 
 jobs:
+  secrets:
+    uses: ./.github/workflows/validate_secrets.yml
+    secrets: inherit
+    
+  check_alive_and_permissions:
+    needs: secrets
+    runs-on: ubuntu-latest
+    name: Check for alive branch; create if necessary
+#    outputs:
+#      WORKFLOW_PERMISSION: ${{ steps.workflow-permissions.WORKFLOW_PERMISSIONS }}
+      
+    steps:
+    - name: Check for workflow permissions
+      id: workflow-permission
+      run: |
+        PERMISSIONS=$(curl -sS -f -I -H "Authorization: token ${{ secrets.GH_PAT }}" https://api.github.com | grep ^x-oauth-scopes: | cut -d' ' -f2-);
+        
+        if [[ $PERMISSIONS =~ "workflow" || $PERMISSIONS == "" ]]; then
+          echo "GH_PAT holds workflow permissions or is fine-grained PAT."
+          echo "WORKFLOW_PERMISSION=true" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
+        else 
+          echo "GH_PAT lacks workflow permissions."
+          echo "Automated build features will be skipped!"
+          echo "WORKFLOW_PERMISSION=false" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
+        fi
+    
+    - name: Check for alive branch
+      if: steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true'
+      run: |
+        if git show-ref --quiet refs/heads/alive; then
+          echo "Branch 'alive' exists."
+          echo "ALIVE_BRANCH_EXISTS=true" >> $GITHUB_ENV # Set ALIVE_BRANCH_EXISTS to true
+        else
+          echo "Branch 'alive' does not exist."
+          echo "ALIVE_BRANCH_EXISTS=false" >> $GITHUB_ENV # Set ALIVE_BRANCH_EXISTS to false
+        fi
+        
+    - name: Create alive branch
+      if: env.ALIVE_BRANCH_EXISTS != 'true'
+      uses: peterjgrainger/action-create-branch@v2.2.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+      with:
+        branch: alive
+        
   check_latest_from_upstream:
+    needs: check_alive_and_permissions
     runs-on: ubuntu-latest
     name: Check upstream and keep alive
-    permissions:
-      contents: write
     outputs: 
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
-
+      
     steps:
     - name: Checkout target repo
-      if: vars.SCHEDULED_BUILD == 'true' || vars.SCHEDULED_SYNC == 'true'
+      if: |
+        steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' &&
+        (vars.SCHEDULED_BUILD == 'true' || vars.SCHEDULED_SYNC == 'true')
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GH_PAT }}
         ref: alive
 
     - name: Sync upstream changes
-      if: vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' # do not run the upstream sync action on the upstream repository
+      if: |
+        steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' &&
+        vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' # do not run the upstream sync action on the upstream repository
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
       with:
@@ -46,28 +95,34 @@ jobs:
       
     # Display a sample message based on the sync output var 'has_new_commits'
     - name: New commits found
-      if: vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true'
+      if: |
+        steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' &&
+        vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true'
       run: echo "New commits were found to sync."
     
     - name: No new commits
-      if: vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false'
+      if: |
+        steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' && 
+        vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false'
       run: echo "There were no new commits."
       
     - name: Show value of 'has_new_commits'
-      if: vars.SCHEDULED_SYNC == 'true'
+      if: steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC == 'true'
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
     
     # Keep repository "alive": add empty commits to ALIVE_BRANCH after "time_elapsed" days of inactivity to avoid inactivation of scheduled workflows
     - name: Keep alive
-      if: vars.SCHEDULED_BUILD == 'true' || vars.SCHEDULED_SYNC == 'true'
+      if: |
+        steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' &&
+        (vars.SCHEDULED_BUILD == 'true' || vars.SCHEDULED_SYNC == 'true')
       uses: gautamkrishnar/keepalive-workflow@v1 # using the workflow with default settings
       with:
         time_elapsed: 20 # Time elapsed from the previous commit to trigger a new automated commit (in days)
         
     - name: Show scheduled build configuration message
-      if: vars.SCHEDULED_BUILD != 'true' || vars.SCHEDULED_SYNC != 'true'
+      if: steps.workflow-permission.output.WORKFLOW_PERMISSION != 'true'
       run: |
         echo "### :calendar: Scheduled Sync and Build Disabled :mobile_phone_off:" >> $GITHUB_STEP_SUMMARY
         echo "You have not yet configured the scheduled sync and build for Loop's browser build." >> $GITHUB_STEP_SUMMARY
@@ -83,21 +138,22 @@ jobs:
       contents: write
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first each month, or if sync schedule is set and enabled and new commits were found
         github.event_name == 'workflow_dispatch' ||
+        (steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' &&
         (vars.SCHEDULED_BUILD == 'true' && github.event.schedule == '0 4 1 * *') ||
-        (vars.SCHEDULED_SYNC == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' )
+        (vars.SCHEDULED_SYNC == 'true' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' ))
     steps:
       - name: Select Xcode version
         run: "sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer"
 
       - name: Checkout Repo for syncing
-        if: vars.SCHEDULED_SYNC == 'true'
+        if: steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC == 'true'
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.GH_PAT }}
           ref: ${{ env.TARGET_BRANCH }} 
 
       - name: Sync upstream changes
-        if: vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' # do not run the upstream sync action on the upstream repository
+        if: steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC == 'true' && github.repository_owner != 'LoopKit' # do not run the upstream sync action on the upstream repository
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
         with:
@@ -109,15 +165,19 @@ jobs:
       
       # Display a sample message based on the sync output var 'has_new_commits'
       - name: New commits found
-        if: vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true'
+        if: |
+          steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' &&
+          vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'true'
         run: echo "New commits were found to sync."
     
       - name: No new commits
-        if: vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false'
+        if: |
+          steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' && 
+          vars.SCHEDULED_SYNC == 'true' && steps.sync.outputs.has_new_commits == 'false'
         run: echo "There were no new commits."
       
       - name: Show value of 'has_new_commits'
-        if: vars.SCHEDULED_SYNC == 'true'
+        if: steps.workflow-permission.output.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC == 'true'
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
