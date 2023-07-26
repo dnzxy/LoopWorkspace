@@ -48,6 +48,8 @@ jobs:
         
     - name: Check for alive branch
       if: steps.workflow-permission.outputs.has_permission == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       run: |
         if [[ "$(gh api -H "Accept: application/vnd.github+json" /repos/dnzxy/LoopWorkspace/branches | jq --raw-output 'any(.name=="alive")')" == "true" ]]; then
           echo "Branch 'alive' exists."
