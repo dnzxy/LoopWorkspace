@@ -51,7 +51,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       run: |
-        if [[ "$(gh api -H "Accept: application/vnd.github+json" /repos/dnzxy/LoopWorkspace/branches | jq --raw-output 'any(.name=="alive")')" == "true" ]]; then
+        if [[ "$(gh api -H "Accept: application/vnd.github+json" /repos/${{ github.repository_owner }}/LoopWorkspace/branches | jq --raw-output 'any(.name=="alive")')" == "true" ]]; then
           echo "Branch 'alive' exists."
           echo "ALIVE_BRANCH_EXISTS=true" >> $GITHUB_ENV # Set ALIVE_BRANCH_EXISTS to true
         else
@@ -65,7 +65,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       run: |
         # Get ref for LoopKit/LoopWorkspace:dev
-        SHA=$(curl -sS https://api.github.com/repos/LoopKit/LoopWorkspace/git/refs \
+        SHA=$(curl -sS https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/git/refs \
           | jq '.[] | select(.ref == "refs/heads/dev" ) | .object.sha' \
           | tr -d '"'
         );
