@@ -12,8 +12,7 @@ on:
 
 env:
   UPSTREAM_REPO: LoopKit/LoopWorkspace
-#  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
-  UPSTREAM_BRANCH: dev # branch on upstream repository to sync from (replace with specific branch name if needed)
+  UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
   TARGET_BRANCH: ${{ github.ref_name }} # target branch on fork to be kept in sync, and target branch on upstream to be kept alive (replace with specific branch name if needed)
   ALIVE_BRANCH: alive
   WORKFLOW_PERMISSIONS: false
@@ -35,8 +34,10 @@ jobs:
     steps:
     - name: Check for workflow permissions
       id: workflow-permission
+      env: 
+        TOKEN_TO_CHECK: ${{ secrets.GH_PAT }}
       run: |
-        PERMISSIONS=$(curl -sS -f -I -H "Authorization: token ${{ secrets.GH_PAT }}" https://api.github.com | grep ^x-oauth-scopes: | cut -d' ' -f2-);
+        PERMISSIONS=$(curl -sS -f -I -H "Authorization: token ${{ env.TOKEN_TO_CHECK }}" https://api.github.com | grep ^x-oauth-scopes: | cut -d' ' -f2-);
         
         if [[ $PERMISSIONS =~ "workflow" || $PERMISSIONS == "" ]]; then
           echo "GH_PAT holds workflow permissions or is fine-grained PAT."
@@ -50,7 +51,7 @@ jobs:
     - name: Check for alive branch
       if: steps.workflow-permission.outputs.has_permission == 'true'
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         if [[ "$(gh api -H "Accept: application/vnd.github+json" /repos/${{ github.repository_owner }}/LoopWorkspace/branches | jq --raw-output 'any(.name=="alive")')" == "true" ]]; then
           echo "Branch 'alive' exists."
@@ -63,7 +64,7 @@ jobs:
     - name: Create alive branch
       if: env.ALIVE_BRANCH_EXISTS != 'true'
       env:
-        GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         # Get ref for LoopKit/LoopWorkspace:dev
         SHA=$(curl -sS https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/git/refs \
