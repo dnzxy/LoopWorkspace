@@ -55,7 +55,7 @@ jobs:
         
     - name: Check for alive branch
       #if: steps.workflow-permission.outputs.has_permission == 'true'
-      if: ${{ env.WORKFLOW_PERMISSION == 'true' }}
+      if: env.WORKFLOW_PERMISSION == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -102,7 +102,7 @@ jobs:
     
     - name: Checkout target repo
       if: |
-        ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+        env.WORKFLOW_PERMISSION == 'true' &&
         (vars.SCHEDULED_BUILD != 'false' || vars.SCHEDULED_SYNC != 'false')
       uses: actions/checkout@v3
       with:
@@ -111,7 +111,7 @@ jobs:
 
     - name: Sync upstream changes
       if: | # do not run the upstream sync action on the upstream repository
-        ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+        env.WORKFLOW_PERMISSION == 'true' &&
         vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'LoopKit'
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
@@ -125,18 +125,18 @@ jobs:
     # Display a sample message based on the sync output var 'has_new_commits'
     - name: New commits found
       if: |
-        ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+        env.WORKFLOW_PERMISSION == 'true' &&
         vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'true'
       run: echo "New commits were found to sync."
     
     - name: No new commits
       if: |
-        ${{ env.WORKFLOW_PERMISSION == 'true' }} && 
+        env.WORKFLOW_PERMISSION == 'true' && 
         vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false'
       run: echo "There were no new commits."
       
     - name: Show value of 'has_new_commits'
-      if: ${{ env.WORKFLOW_PERMISSION == 'true' }} && vars.SCHEDULED_SYNC != 'false'
+      if: env.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC != 'false'
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
@@ -144,7 +144,7 @@ jobs:
     # Keep repository "alive": add empty commits to ALIVE_BRANCH after "time_elapsed" days of inactivity to avoid inactivation of scheduled workflows
     - name: Keep alive
       if: |
-        ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+        env.WORKFLOW_PERMISSION == 'true' &&
         (vars.SCHEDULED_BUILD != 'false' || vars.SCHEDULED_SYNC != 'false')
       uses: gautamkrishnar/keepalive-workflow@v1 # using the workflow with default settings
       with:
@@ -169,7 +169,7 @@ jobs:
       contents: write
     if: | # runs if started manually, or if sync schedule is set and enabled and scheduled on the first Saturday each month, or if sync schedule is set and enabled and new commits were found
         github.event_name == 'workflow_dispatch' ||
-        (${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+        (env.WORKFLOW_PERMISSION == 'true' &&
           (vars.SCHEDULED_BUILD != 'false' && github.event.schedule == '0 8 1 * 6') ||
           (vars.SCHEDULED_SYNC != 'false' && needs.check_latest_from_upstream.outputs.NEW_COMMITS == 'true' )
         )
@@ -179,7 +179,7 @@ jobs:
 
       - name: Checkout Repo for syncing
         if: |
-          ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+          env.WORKFLOW_PERMISSION == 'true' &&
           vars.SCHEDULED_SYNC != 'false'
         uses: actions/checkout@v3
         with:
@@ -188,7 +188,7 @@ jobs:
 
       - name: Sync upstream changes
         if: | # do not run the upstream sync action on the upstream repository
-          ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+          env.WORKFLOW_PERMISSION == 'true' &&
           vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'LoopKit'
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
@@ -202,19 +202,19 @@ jobs:
       # Display a sample message based on the sync output var 'has_new_commits'
       - name: New commits found
         if: |
-          ${{ env.WORKFLOW_PERMISSION == 'true' }} &&
+          env.WORKFLOW_PERMISSION == 'true' &&
           vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'true'
         run: echo "New commits were found to sync."
     
       - name: No new commits
         if: |
-          ${{ env.WORKFLOW_PERMISSION == 'true' }} && 
+          env.WORKFLOW_PERMISSION == 'true' && 
           vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false'
         run: echo "There were no new commits."
       
       - name: Show value of 'has_new_commits'
         if: |
-          ${{ env.WORKFLOW_PERMISSION == 'true' }}
+          env.WORKFLOW_PERMISSION == 'true'
           && vars.SCHEDULED_SYNC != 'false'
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
