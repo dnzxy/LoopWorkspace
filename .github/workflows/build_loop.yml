@@ -7,8 +7,8 @@ on:
   #push:
 
   schedule:
-    - cron: '0 8 * * 3' # Checks for updates at 08:00 UTC every Wednesday
-    - cron: '0 8 1 * 6' # Builds the app on the 1st Saturday every month an 08:00 UTC
+    - cron: '0 8 * * 3' # Checks for updates at 08:00 am UTC every Wednesday
+    - cron: '0 8 1 * 6' # Builds the app on the 1st Saturday every month at 08:00 am UTC
 
 env:
   UPSTREAM_REPO: LoopKit/LoopWorkspace
@@ -18,14 +18,14 @@ env:
   WORKFLOW_PERMISSIONS: false
 
 jobs:
-  validate:
+  secrets:
     uses: ./.github/workflows/validate_secrets.yml
     secrets: inherit
     
   # Checks if GH_PAT holds workflow permissions
   # Checks for existence of alive branch; if non-existent creates it
   check_alive_and_permissions:
-    needs: validate
+    needs: secrets
     runs-on: ubuntu-latest
     name: Check alive branch and permissions
     permissions:
