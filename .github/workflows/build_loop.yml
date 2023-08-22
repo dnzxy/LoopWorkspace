@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: write
     outputs:
-      WORKFLOW_PERMISSION: ${{ steps.validate.outputs.has_permission }}
+      WORKFLOW_PERMISSION: ${{ steps.workflow-permission.outputs.has_permission }}
       
     steps:
     #- name: Check for workflow permissions
@@ -96,6 +96,7 @@ jobs:
     name: Check upstream and keep alive
     outputs: 
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
+      WORKFLOW_PERMISSION: ${{ steps.workflow-permission.outputs.has_permission }}
       
     steps:
     - name: Checkout target repo
