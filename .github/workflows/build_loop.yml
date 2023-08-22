@@ -18,14 +18,14 @@ env:
   WORKFLOW_PERMISSIONS: false
 
 jobs:
-  secrets:
+  validate:
     uses: ./.github/workflows/validate_secrets.yml
     secrets: inherit
     
   # Checks if GH_PAT holds workflow permissions
   # Checks for existence of alive branch; if non-existent creates it
   check_alive_and_permissions:
-    needs: secrets
+    needs: validate
     runs-on: ubuntu-latest
     name: Check alive branch and permissions
     permissions:
