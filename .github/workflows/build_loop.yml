@@ -24,10 +24,10 @@ jobs:
     
   # Checks if GH_PAT holds workflow permissions
   # Checks for existence of alive branch; if non-existent creates it
-  check_alive_and_permissions:
+  check_alive:
     needs: validate
     runs-on: ubuntu-latest
-    name: Check alive branch and permissions
+    name: Check alive branch
     permissions:
       contents: write
     #outputs:
@@ -87,13 +87,16 @@ jobs:
   # Checks for changes in upstream repository; if changes exist prompts sync for build
   # Performs keepalive to avoid stale fork
   check_latest_from_upstream:
-    needs: check_alive_and_permissions
+    needs: check_alive
     runs-on: ubuntu-latest
     name: Check upstream and keep alive
     outputs: 
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
       
     steps:
+    - name: Check output
+      run: echo "Workflow permission = ${{needs.validate.outputs.WORKFLOW_PERMISSION}}"
+    
     - name: Checkout target repo
       if: |
         needs.validate.outputs.WORKFLOW_PERMISSION == 'true' &&
