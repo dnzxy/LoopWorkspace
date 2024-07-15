@@ -56,14 +56,13 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       run: |
-        if [[ gh api -H "Accept: application/vnd.github+json" /repos/${{ github.repository_owner }}/LoopWorkspace/branches | jq --raw-output '[.[] | select(.name == "alive-main" or .name == "alive-dev")] | length > 0' == "true" ]]; then
+        if [[ $(gh api -H "Accept: application/vnd.github+json" /repos/${{ github.repository_owner }}/LoopWorkspace/branches | jq --raw-output '[.[] | select(.name == "alive-main" or .name == "alive-dev")] | length > 0') == "true" ]]; then
           echo "Branches 'alive-main' or 'alive-dev' exist."
           echo "ALIVE_BRANCH_EXISTS=true" >> $GITHUB_ENV
         else
           echo "Branches 'alive-main' and 'alive-dev' do not exist."
           echo "ALIVE_BRANCH_EXISTS=false" >> $GITHUB_ENV
         fi
-
 
     
     - name: Create alive branches
