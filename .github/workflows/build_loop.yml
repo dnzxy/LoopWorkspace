@@ -51,35 +51,31 @@ jobs:
           echo "has_permission=false" >> $GITHUB_OUTPUT # Set WORKFLOW_PERMISSION to false.
         fi
     
-    - name: Check for alive branch
+    - name: Check for alive branches
       if: steps.workflow-permission.outputs.has_permission == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       run: |
-        if gh api -H "Accept: application/vnd.github+json" /repos/${{ github.repository_owner }}/LoopWorkspace/branches | jq --raw-output '[.[] | select(.name | contains("alive-main") or contains("alive-dev"))] | length > 0'; then
-          echo "Branch 'alive' exists."
-          echo "ALIVE_BRANCH_EXISTS=true" >> $GITHUB_ENV # Set ALIVE_BRANCH_EXISTS to true
+        if gh api -H "Accept: application/vnd.github+json" /repos/${{ github.repository_owner }}/LoopWorkspace/branches | jq --raw-output '[.[] | select(.name == "alive-main" or .name == "alive-dev")] | length > 0'; then
+          echo "Branches 'alive-main' or 'alive-dev' exist."
+          echo "ALIVE_BRANCH_EXISTS=true" >> $GITHUB_ENV
         else
-          echo "Branch 'alive' does not exist."
-          echo "ALIVE_BRANCH_EXISTS=false" >> $GITHUB_ENV # Set ALIVE_BRANCH_EXISTS to false
+          echo "Branches 'alive-main' and 'alive-dev' do not exist."
+          echo "ALIVE_BRANCH_EXISTS=false" >> $GITHUB_ENV
         fi
+
+
     
-    - name: Create alive branch
+    - name: Create alive branches
       if: env.ALIVE_BRANCH_EXISTS == 'false'
       env:
         GITHUB_TOKEN: ${{ secrets.GH_PAT }}
       run: |
         # Get ref for LoopKit/LoopWorkspace:main
-        SHA_MAIN=$(curl -sS https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/git/refs \
-          | jq '.[] | select(.ref == "refs/heads/main" ) | .object.sha' \
-          | tr -d '"'
-        );
-
+        SHA_MAIN=$(curl -sS -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/git/refs/heads/main | jq -r '.object.sha')
+    
         # Get ref for LoopKit/LoopWorkspace:dev
-        SHA_DEV=$(curl -sS https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/git/refs \
-          | jq '.[] | select(.ref == "refs/heads/dev" ) | .object.sha' \
-          | tr -d '"'
-        );
+        SHA_DEV=$(curl -sS -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/${{ env.UPSTREAM_REPO }}/git/refs/heads/dev | jq -r '.object.sha')
         
         # Create alive-main branch based on LoopKit/LoopWorkspace:main
         gh api \
@@ -88,8 +84,8 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           /repos/${{ github.repository_owner }}/LoopWorkspace/git/refs \
           -f ref='refs/heads/alive-main' \
-          -f sha=$SHA
-
+          -f sha=$SHA_MAIN
+    
         # Create alive-dev branch based on LoopKit/LoopWorkspace:dev
         gh api \
           --method POST \
@@ -97,7 +93,8 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           /repos/${{ github.repository_owner }}/LoopWorkspace/git/refs \
           -f ref='refs/heads/alive-dev' \
-          -f sha=$SHA
+          -f sha=$SHA_DEV
+
   
   # Checks for changes in upstream repository; if changes exist prompts sync for build
   # Performs keepalive to avoid stale fork
