@@ -64,6 +64,7 @@ jobs:
           echo "ALIVE_BRANCH_EXISTS=false" >> $GITHUB_ENV
         fi
 
+
     
     - name: Create alive branches
       if: env.ALIVE_BRANCH_EXISTS == 'false'
@@ -105,15 +106,6 @@ jobs:
       NEW_COMMITS: ${{ steps.sync.outputs.has_new_commits }}
     
     steps:
-    - name: Checkout target repo
-      if: |
-        needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
-        (vars.SCHEDULED_BUILD != 'false' || vars.SCHEDULED_SYNC != 'false')
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GH_PAT }}
-        ref: alive
-
     - name: Check if running on main or dev branch
       id: check_branch
       if: |
@@ -131,6 +123,15 @@ jobs:
           echo "::set-output name=abort_sync::true"
           echo "ABORT_SYNC=false" >> $GITHUB_OUTPUT
         fi
+        
+    - name: Checkout target repo
+      if: |
+        needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
+        (vars.SCHEDULED_BUILD != 'false' || vars.SCHEDULED_SYNC != 'false')
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT }}
+        ref: ${{ steps.check_branch.outputs.alive_branch }}
     
     - name: Sync upstream changes
       if: | # do not run the upstream sync action on the upstream repository
