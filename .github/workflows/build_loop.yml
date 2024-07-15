@@ -133,6 +133,7 @@ jobs:
         else
           echo "Not running on main branch"
           echo "::set-output name=abort_sync::true"
+          echo "ABORT_SYNC=false" >> $GITHUB_OUTPUT
         fi
     
     - name: Sync upstream changes
@@ -214,7 +215,7 @@ jobs:
       - name: Sync upstream changes
         if: | # do not run the upstream sync action on the upstream repository
           needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'LoopKit'
+          vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'LoopKit' && needs.check_latest_from_upstream.outputs.ABORT_SYNC == 'false'
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
         with:
@@ -228,19 +229,19 @@ jobs:
       - name: New commits found
         if: |
           needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
-          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'true'
+          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'true' && needs.check_latest_from_upstream.outputs.ABORT_SYNC == 'false'
         run: echo "New commits were found to sync."
     
       - name: No new commits
         if: |
           needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' && 
-          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false'
+          vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false' && needs.check_latest_from_upstream.outputs.ABORT_SYNC == 'false'
         run: echo "There were no new commits."
       
       - name: Show value of 'has_new_commits'
         if: |
           needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true'
-          && vars.SCHEDULED_SYNC != 'false'
+          && vars.SCHEDULED_SYNC != 'false' && needs.check_latest_from_upstream.outputs.ABORT_SYNC == 'false'
         run: |
           echo ${{ steps.sync.outputs.has_new_commits }}
           echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
