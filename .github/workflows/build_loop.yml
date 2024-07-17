@@ -11,7 +11,7 @@ on:
     - cron: '0 6 1 * *' # Builds the app on the 1st of every month at 06:00 UTC
 
 env:
-  UPSTREAM_REPO: LoopKit/LoopWorkspace
+  UPSTREAM_REPO: loopandlearn/LoopWorkspace
   UPSTREAM_BRANCH: ${{ github.ref_name }} # branch on upstream repository to sync from (replace with specific branch name if needed)
   TARGET_BRANCH: ${{ github.ref_name }} # target branch on fork to be kept in sync, and target branch on upstream to be kept alive (replace with specific branch name if needed)
   ALIVE_BRANCH_MAIN: alive-main
@@ -124,6 +124,9 @@ jobs:
           echo "ABORT_SYNC=true" >> $GITHUB_OUTPUT
         fi
 
+        echo $ABORT_SYNC
+        echo $ALIVE_BRANCH
+
     - name: Checkout target repo
       if: |
         needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
@@ -136,7 +139,7 @@ jobs:
     - name: Sync upstream changes
       if: | # do not run the upstream sync action on the upstream repository
         needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
-        vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'LoopKit' && steps.check_branch.outputs.ABORT_SYNC == 'true'
+        vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'loopandlearn' && steps.check_branch.outputs.ABORT_SYNC == 'true'
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
       with:
@@ -160,7 +163,7 @@ jobs:
       run: echo "There were no new commits."
     
     - name: Show value of 'has_new_commits'
-      if: needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC != 'false'
+      if: needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' && vars.SCHEDULED_SYNC != 'false' && steps.sync.outputs.has_new_commits == 'false'
       run: |
         echo ${{ steps.sync.outputs.has_new_commits }}
         echo "NEW_COMMITS=${{ steps.sync.outputs.has_new_commits }}" >> $GITHUB_OUTPUT
