@@ -124,9 +124,6 @@ jobs:
           echo "ABORT_SYNC=true" >> $GITHUB_OUTPUT
         fi
 
-        echo "$ABORT_SYNC"
-        echo "$ALIVE_BRANCH"
-
     - name: Checkout target repo
       if: |
         needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
@@ -139,7 +136,7 @@ jobs:
     - name: Sync upstream changes
       if: | # do not run the upstream sync action on the upstream repository
         needs.check_alive_and_permissions.outputs.WORKFLOW_PERMISSION == 'true' &&
-        vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'loopandlearn' && steps.check_branch.outputs.ABORT_SYNC == 'true'
+        vars.SCHEDULED_SYNC != 'false' && github.repository_owner != 'loopandlearn' && steps.check_branch.outputs.ABORT_SYNC == 'false'
       id: sync
       uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
       with:
