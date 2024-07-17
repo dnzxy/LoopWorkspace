@@ -124,8 +124,8 @@ jobs:
           echo "ABORT_SYNC=true" >> $GITHUB_OUTPUT
         fi
 
-        echo $ABORT_SYNC
-        echo $ALIVE_BRANCH
+        echo "$ABORT_SYNC"
+        echo "$ALIVE_BRANCH"
 
     - name: Checkout target repo
       if: |
